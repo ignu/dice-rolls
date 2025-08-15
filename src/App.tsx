@@ -411,7 +411,7 @@ function App() {
           {rollHistory.length === 0 ? (
             <p className="text-gray-400 text-center py-8">No rolls yet. Roll some dice!</p>
           ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 overflow-y-auto">
               {rollHistory.map((roll) => (
                 <div key={roll.id} className="bg-gray-700 rounded-lg p-4 flex justify-between items-center">
                   <div className="flex-1">

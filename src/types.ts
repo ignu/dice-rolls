@@ -13,6 +13,8 @@ export interface DiceRoll {
   total: number;
   modifier: number;
   expression: string;
+  name?: string;
+  isCustom?: boolean;
 }
 
 export interface DiceSelection {

@@ -3,6 +3,7 @@ import { DiceType, DiceRoll, DiceSelection } from './types';
 import { rollDice, rollMultipleDice, formatDiceRoll } from './utils/dice';
 import { diceRollDB } from './utils/database';
 import { COMMON_ROLLS, CommonRoll } from './data/commonRolls';
+import { saveCustomRoll, getCustomRolls, deleteCustomRoll } from './utils/customRolls';
 
 const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -14,6 +15,10 @@ function App() {
   );
   const [selectedCategory, setSelectedCategory] = useState<string>(COMMON_ROLLS[0]?.name || '');
   const [showCommonRolls, setShowCommonRolls] = useState(false);
+  const [customRolls, setCustomRolls] = useState<CommonRoll[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [rollToSave, setRollToSave] = useState<DiceRoll | null>(null);
+  const [saveName, setSaveName] = useState('');
 
   useEffect(() => {
     const initializeDatabase = async () => {
@@ -36,6 +41,10 @@ function App() {
     };
 
     initializeDatabase();
+  }, []);
+
+  useEffect(() => {
+    setCustomRolls(getCustomRolls());
   }, []);
 
 
@@ -73,8 +82,66 @@ function App() {
     const activeDice = multiDice.filter(dice => dice.count > 0);
     if (activeDice.length === 0) return;
     
-    const roll = rollMultipleDice(activeDice, modifier);
+    // Check if this is a custom roll (not a pre-defined common roll)
+    const isCustom = !isPreDefinedRoll(activeDice, modifier);
+    const roll = rollMultipleDice(activeDice, modifier, isCustom);
     await addRollToHistory(roll);
+  };
+
+  const isPreDefinedRoll = (diceSelections: DiceSelection[], mod: number): boolean => {
+    // Check if this combination matches any existing common roll
+    for (const category of COMMON_ROLLS) {
+      for (const commonRoll of category.rolls) {
+        if (commonRoll.modifier === mod && 
+            diceSelections.length === commonRoll.dice.length &&
+            diceSelections.every(selection => 
+              commonRoll.dice.some(dice => dice.type === selection.type && dice.count === selection.count)
+            )) {
+          return true;
+        }
+      }
+    }
+    // Also check custom rolls
+    for (const customRoll of customRolls) {
+      if (customRoll.modifier === mod && 
+          diceSelections.length === customRoll.dice.length &&
+          diceSelections.every(selection => 
+            customRoll.dice.some(dice => dice.type === selection.type && dice.count === selection.count)
+          )) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleSaveRoll = (roll: DiceRoll) => {
+    setRollToSave(roll);
+    setSaveName('');
+    setShowSaveDialog(true);
+  };
+
+  const confirmSaveRoll = () => {
+    if (!rollToSave || !saveName.trim()) return;
+    
+    const customRoll: CommonRoll = {
+      name: saveName.trim(),
+      dice: rollToSave.diceGroups.map(group => ({
+        type: group.type,
+        count: group.count
+      })),
+      modifier: rollToSave.modifier
+    };
+    
+    saveCustomRoll(saveName.trim(), customRoll);
+    setCustomRolls(getCustomRolls());
+    setShowSaveDialog(false);
+    setRollToSave(null);
+    setSaveName('');
+  };
+
+  const handleDeleteCustomRoll = (name: string) => {
+    deleteCustomRoll(name);
+    setCustomRolls(getCustomRolls());
   };
 
   const updateMultiDiceCount = (type: DiceType, count: number) => {
@@ -186,11 +253,58 @@ function App() {
                       {category.name}
                     </option>
                   ))}
+                  <option value="Custom">Custom Rolls</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {COMMON_ROLLS.find(cat => cat.name === selectedCategory)?.rolls.map((roll, index) => (
+                {selectedCategory === "Custom" ? (
+                  customRolls.length === 0 ? (
+                    <div className="col-span-full text-center text-gray-400 py-8">
+                      No custom rolls saved yet. Roll something custom and save it!
+                    </div>
+                  ) : (
+                    customRolls.map((roll, index) => (
+                      <div key={index} className="bg-gray-700 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold text-sm">{roll.name}</h3>
+                            <p className="text-xs text-gray-400">
+                              {roll.dice.map(d => `${d.count}${d.type}`).join(' + ')}
+                              {roll.modifier !== 0 && (roll.modifier > 0 ? ` + ${roll.modifier}` : ` - ${Math.abs(roll.modifier)}`)}
+                            </p>
+                            {roll.description && (
+                              <p className="text-xs text-yellow-400 mt-1">{roll.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCommonRoll(roll)}
+                            className="flex-1 bg-orange-600 hover:bg-orange-700 px-2 py-1 rounded text-xs font-semibold transition-colors"
+                          >
+                            Roll
+                          </button>
+                          <button
+                            onClick={() => populateFromCommonRoll(roll)}
+                            className="flex-1 bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs font-semibold transition-colors"
+                            title="Load into dice roller"
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomRoll(roll.name)}
+                            className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs font-semibold transition-colors"
+                            title="Delete custom roll"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )
+                ) : (
+                  COMMON_ROLLS.find(cat => cat.name === selectedCategory)?.rolls.map((roll, index) => (
                   <div key={index} className="bg-gray-700 rounded-lg p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -220,7 +334,8 @@ function App() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -318,18 +433,70 @@ function App() {
                       {new Date(roll.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleReroll(roll)}
-                    className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition-colors"
-                  >
-                    Reroll
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleReroll(roll)}
+                      className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition-colors"
+                    >
+                      Reroll
+                    </button>
+                    {roll.isCustom && (
+                      <button
+                        onClick={() => handleSaveRoll(roll)}
+                        className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors"
+                        title="Save as custom roll"
+                      >
+                        Save
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Save Roll Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-96 max-w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Save Custom Roll</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Roll Name</label>
+              <input
+                type="text"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && confirmSaveRoll()}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2"
+                placeholder="Enter a name for this roll..."
+                autoFocus
+              />
+            </div>
+            {rollToSave && (
+              <div className="mb-4 text-sm text-gray-400">
+                Roll: {rollToSave.expression}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={confirmSaveRoll}
+                disabled={!saveName.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setShowSaveDialog(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

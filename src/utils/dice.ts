@@ -35,7 +35,7 @@ export function rollDice(type: DiceType, count: number, modifier: number = 0): D
   };
 }
 
-export function rollMultipleDice(diceSelections: DiceSelection[], modifier: number = 0): DiceRoll {
+export function rollMultipleDice(diceSelections: DiceSelection[], modifier: number = 0, isCustom: boolean = false): DiceRoll {
   const diceGroups: DiceGroup[] = [];
   let totalSum = 0;
   
@@ -68,6 +68,7 @@ export function rollMultipleDice(diceSelections: DiceSelection[], modifier: numb
     total,
     modifier,
     expression: formatDiceExpression(diceGroups, modifier),
+    isCustom,
   };
 }
 

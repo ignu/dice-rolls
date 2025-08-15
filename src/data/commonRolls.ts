@@ -14,12 +14,12 @@ export interface RollCategory {
 
 export const COMMON_ROLLS: RollCategory[] = [
   {
-    name: "Weapons",
+    name: "Weapons (2024)",
     rolls: [
       { name: "Dagger", dice: [{ type: 'd4', count: 1 }], modifier: 0 },
       { name: "Shortsword", dice: [{ type: 'd6', count: 1 }], modifier: 0 },
-      { name: "Longsword", dice: [{ type: 'd8', count: 1 }], modifier: 0 },
-      { name: "Greatsword", dice: [{ type: 'd6', count: 2 }], modifier: 0 },
+      { name: "Longsword", dice: [{ type: 'd8', count: 1 }], modifier: 0, description: "2024: Sap mastery" },
+      { name: "Greatsword", dice: [{ type: 'd6', count: 2 }], modifier: 0, description: "2024: Graze mastery" },
       { name: "Rapier", dice: [{ type: 'd8', count: 1 }], modifier: 0 },
       { name: "Greataxe", dice: [{ type: 'd12', count: 1 }], modifier: 0 },
       { name: "Light Crossbow", dice: [{ type: 'd8', count: 1 }], modifier: 0 },
@@ -29,11 +29,11 @@ export const COMMON_ROLLS: RollCategory[] = [
     ]
   },
   {
-    name: "Spells",
+    name: "Spells (2024)",
     rolls: [
       { name: "Fireball (3rd)", dice: [{ type: 'd6', count: 8 }], modifier: 0, description: "DEX save for half" },
       { name: "Lightning Bolt (3rd)", dice: [{ type: 'd6', count: 8 }], modifier: 0, description: "DEX save for half" },
-      { name: "Magic Missile (1st)", dice: [{ type: 'd4', count: 3 }], modifier: 3, description: "3 missiles, 1d4+1 each" },
+      { name: "Magic Missile (1st)", dice: [{ type: 'd4', count: 3 }], modifier: 3, description: "3 missiles, 1d4+1 each (2024: roll separately)" },
       { name: "Scorching Ray (2nd)", dice: [{ type: 'd6', count: 2 }], modifier: 0, description: "Per ray (3 rays)" },
       { name: "Eldritch Blast", dice: [{ type: 'd10', count: 1 }], modifier: 0, description: "Per beam" },
       { name: "Guiding Bolt (1st)", dice: [{ type: 'd6', count: 4 }], modifier: 0 },
@@ -43,13 +43,15 @@ export const COMMON_ROLLS: RollCategory[] = [
     ]
   },
   {
-    name: "Healing Spells",
+    name: "Healing Spells (2024)",
     rolls: [
-      { name: "Cure Wounds (1st)", dice: [{ type: 'd8', count: 1 }], modifier: 0, description: "+spell mod" },
-      { name: "Cure Wounds (2nd)", dice: [{ type: 'd8', count: 2 }], modifier: 0, description: "+spell mod" },
-      { name: "Cure Wounds (3rd)", dice: [{ type: 'd8', count: 3 }], modifier: 0, description: "+spell mod" },
-      { name: "Healing Word (1st)", dice: [{ type: 'd4', count: 1 }], modifier: 0, description: "+spell mod" },
-      { name: "Healing Word (2nd)", dice: [{ type: 'd4', count: 2 }], modifier: 0, description: "+spell mod" },
+      { name: "Cure Wounds (1st)", dice: [{ type: 'd8', count: 2 }], modifier: 0, description: "+spell mod (2024: 2d8)" },
+      { name: "Cure Wounds (2nd)", dice: [{ type: 'd8', count: 4 }], modifier: 0, description: "+spell mod (2024: 4d8)" },
+      { name: "Cure Wounds (3rd)", dice: [{ type: 'd8', count: 6 }], modifier: 0, description: "+spell mod (2024: 6d8)" },
+      { name: "Cure Wounds (4th)", dice: [{ type: 'd8', count: 8 }], modifier: 0, description: "+spell mod (2024: 8d8)" },
+      { name: "Healing Word (1st)", dice: [{ type: 'd4', count: 2 }], modifier: 0, description: "+spell mod (2024: 2d4)" },
+      { name: "Healing Word (2nd)", dice: [{ type: 'd4', count: 4 }], modifier: 0, description: "+spell mod (2024: 4d4)" },
+      { name: "Healing Word (3rd)", dice: [{ type: 'd4', count: 6 }], modifier: 0, description: "+spell mod (2024: 6d4)" },
       { name: "Heal (6th)", dice: [{ type: 'd8', count: 7 }], modifier: 0 },
       { name: "Mass Cure Wounds (5th)", dice: [{ type: 'd8', count: 3 }], modifier: 0, description: "+spell mod each" },
     ]

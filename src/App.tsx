@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { DiceType, DiceRoll, DiceSelection } from './types';
 import { rollDice, rollMultipleDice, formatDiceRoll } from './utils/dice';
 import { diceRollDB } from './utils/database';
+import { COMMON_ROLLS, CommonRoll } from './data/commonRolls';
 
 const DICE_TYPES: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -11,6 +12,8 @@ function App() {
   const [multiDice, setMultiDice] = useState<DiceSelection[]>(
     DICE_TYPES.map(type => ({ type, count: 0 }))
   );
+  const [selectedCategory, setSelectedCategory] = useState<string>(COMMON_ROLLS[0]?.name || '');
+  const [showCommonRolls, setShowCommonRolls] = useState(false);
 
   useEffect(() => {
     const initializeDatabase = async () => {
@@ -109,6 +112,31 @@ function App() {
     await addRollToHistory(roll);
   };
 
+  const handleCommonRoll = async (commonRoll: CommonRoll) => {
+    const activeDice = commonRoll.dice.filter(dice => dice.count > 0);
+    if (activeDice.length === 0 && commonRoll.modifier === 0) return;
+    
+    const roll = rollMultipleDice(activeDice, commonRoll.modifier);
+    await addRollToHistory(roll);
+  };
+
+  const populateFromCommonRoll = (commonRoll: CommonRoll) => {
+    // Clear current dice
+    setMultiDice(DICE_TYPES.map(type => ({ type, count: 0 })));
+    
+    // Set dice from common roll
+    const newMultiDice = DICE_TYPES.map(type => {
+      const diceFromCommon = commonRoll.dice.find(d => d.type === type);
+      return {
+        type,
+        count: diceFromCommon ? diceFromCommon.count : 0
+      };
+    });
+    
+    setMultiDice(newMultiDice);
+    setModifier(commonRoll.modifier);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="max-w-4xl mx-auto">
@@ -130,6 +158,72 @@ function App() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Common D&D Rolls - Collapsible */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowCommonRolls(!showCommonRolls)}
+            className="w-full bg-gray-800 hover:bg-gray-700 rounded-lg p-4 text-left transition-colors flex justify-between items-center"
+          >
+            <span className="text-xl font-semibold">Common D&D Rolls</span>
+            <span className="text-gray-400">
+              {showCommonRolls ? '▼' : '▶'}
+            </span>
+          </button>
+          
+          {showCommonRolls && (
+            <div className="bg-gray-800 rounded-b-lg p-6 border-t border-gray-700">
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                >
+                  {COMMON_ROLLS.map(category => (
+                    <option key={category.name} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {COMMON_ROLLS.find(cat => cat.name === selectedCategory)?.rolls.map((roll, index) => (
+                  <div key={index} className="bg-gray-700 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-sm">{roll.name}</h3>
+                        <p className="text-xs text-gray-400">
+                          {roll.dice.map(d => `${d.count}${d.type}`).join(' + ')}
+                          {roll.modifier !== 0 && (roll.modifier > 0 ? ` + ${roll.modifier}` : ` - ${Math.abs(roll.modifier)}`)}
+                        </p>
+                        {roll.description && (
+                          <p className="text-xs text-yellow-400 mt-1">{roll.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCommonRoll(roll)}
+                        className="flex-1 bg-orange-600 hover:bg-orange-700 px-2 py-1 rounded text-xs font-semibold transition-colors"
+                      >
+                        Roll
+                      </button>
+                      <button
+                        onClick={() => populateFromCommonRoll(roll)}
+                        className="flex-1 bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        title="Load into dice roller"
+                      >
+                        Load
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Dice Roll Section */}
